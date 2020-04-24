@@ -9,6 +9,10 @@ arch:
 language: c
 sudo: false
 
+branches:
+  only:
+  - travis
+
 git:
   submodules: false
 
