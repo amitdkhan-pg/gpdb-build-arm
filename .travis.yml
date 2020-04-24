@@ -2,10 +2,6 @@
 ## Travis CI build script for Greenplum Database Open Source Project.
 ## ----------------------------------------------------------------------
 
-arch:
- - amd64
- - arm64
-
 language: c
 sudo: false
 
@@ -47,7 +43,7 @@ matrix:
           dist: bionic
           compiler: gcc
           env:
-              - T=debug C=""
+              - T=debug C="--without-zlib --without-libbz2 --without-zstd --without-quicklz"
               - OVERRIDE_CC="CC=gcc-8" OVERRIDE_CXX="CXX=g++-8"
           addons:
               apt:
@@ -55,32 +51,6 @@ matrix:
                       - *common_sources
                   packages:
                       - *common_packages
-        # Ubuntu Xenial, clang 7
-        - os: linux
-          dist: xenial
-          compiler: clang
-          env:
-              - T=debug C=""
-              - OVERRIDE_CC="CC=clang-7" OVERRIDE_CXX="CXX=clang++-7"
-          addons:
-              apt:
-                  sources:
-                      - *common_sources
-                      - llvm-toolchain-xenial-7
-                  packages:
-                      - *common_packages
-                      - clang-7
-        # macOS, XCode11
-        - os: osx
-          compiler: clang
-          osx_image: xcode11
-          env: T=macos
-        #
-        # Configuration variations
-        # ----------------------------------------------------------------
-        #
-        # Debug build without any compression algorithms supplied
-        # Let this one build on x86_64 for comparison with arm results.
         - os: linux
           arch: amd64
           dist: bionic
