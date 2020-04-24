@@ -2,6 +2,10 @@
 ## Travis CI build script for Greenplum Database Open Source Project.
 ## ----------------------------------------------------------------------
 
+arch:
+ - amd64
+ - arm64
+
 language: c
 sudo: false
 
@@ -26,14 +30,16 @@ addons:
             - libapr1-dev
             - libzstd1
             - libzstd1-dev
+            - python-pip
 
 matrix:
     include:
         # OS and Compiler variations
         # ----------------------------------------------------------------
         #
-        # Ubuntu Bionic, gcc 8
+        # Ubuntu Bionic on aarch64, gcc 8
         - os: linux
+          arch: arm64
           dist: bionic
           compiler: gcc
           env:
@@ -70,7 +76,9 @@ matrix:
         # ----------------------------------------------------------------
         #
         # Debug build without any compression algorithms supplied
+        # Let this one build on x86_64 for comparison with arm results.
         - os: linux
+          arch: amd64
           dist: bionic
           compiler: gcc
           env:
