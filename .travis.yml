@@ -53,19 +53,6 @@ matrix:
                   packages:
                       - *common_packages
         - os: linux
-          arch: arm64
-          dist: bionic
-          compiler: gcc
-          env:
-              - T=debug C=""
-              - OVERRIDE_CC="CC=gcc-8" OVERRIDE_CXX="CXX=g++-8"
-          addons:
-              apt:
-                  sources:
-                      - *common_sources
-                  packages:
-                      - *common_packages
-        - os: linux
           arch: amd64
           dist: bionic
           compiler: gcc
