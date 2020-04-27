@@ -93,6 +93,7 @@ before_install:
 ## ----------------------------------------------------------------------
 
 install:
+    - /bin/rm -fr /home/travis/.cache/pip
     - pip install --user --upgrade pip
     - pip install --user --pre psutil
     - pip install --user lockfile
@@ -110,27 +111,7 @@ script:
   - |
       set -eo pipefail
       if [ "$T" = "debug" ]; then
-        ./configure \
-            --prefix=${TRAVIS_BUILD_DIR}/gpsql \
-            --enable-cassert \
-            --enable-debug \
-            --enable-debug-extensions \
-            --with-perl \
-            --with-python \
-            --disable-orca \
-            --with-openssl \
-            --with-ldap \
-            --with-libcurl \
-            --with-libxml \
-            --enable-mapreduce \
-            --enable-orafce \
-            $C
-        travis_wait 50 make install
-        source ${TRAVIS_BUILD_DIR}/gpsql/greenplum_path.sh
-        travis_wait 50 make -s unittest-check
-        make -C gpAux/gpdemo cluster
-        source gpAux/gpdemo/gpdemo-env.sh
-        travis_wait 50 make -C src/test/regress installcheck-small
+        lscpu
       fi
   - |
       set -eo pipefail
