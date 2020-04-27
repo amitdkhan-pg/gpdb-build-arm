@@ -80,7 +80,9 @@ before_install:
 ## ----------------------------------------------------------------------
 
 install:
-    - /bin/rm -fr /home/travis/.cache/pip
+    - whoami
+    - ls -ld /home/travis /home/travis/.cache /home/travis/.cache/pip /home/travis/.cache/pip/wheels /home/travis/.cache/pip/wheels/a1
+    - mv /home/travis/.cache/pip /home/travis/.cache/temppip
     - pip install --user --upgrade pip
     - pip install --user --pre psutil
     - pip install --user lockfile
