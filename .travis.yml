@@ -31,6 +31,7 @@ addons:
             - libzstd1
             - libzstd1-dev
             - python-pip
+            - net-tools
 
 matrix:
     include:
@@ -126,7 +127,7 @@ script:
             $C
         travis_wait 50 make install
         source ${TRAVIS_BUILD_DIR}/gpsql/greenplum_path.sh
-        travis_wait 50 make unittest-check
+        travis_wait 50 make -s unittest-check
         make -C gpAux/gpdemo cluster
         source gpAux/gpdemo/gpdemo-env.sh
         travis_wait 50 make -C src/test/regress installcheck-small
