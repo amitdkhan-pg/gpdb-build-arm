@@ -1300,7 +1300,8 @@ CREATE_QD_DB () {
 
 # returns hostname for given address or "__lookup_of_hostname_failed__" if hostname not found
 HOST_LOOKUP() {
-	res=`echo $1 | $GPHOSTCACHELOOKUP`
+#	res=`echo $1 | $GPHOSTCACHELOOKUP`
+	res=`hostname`
 	err_index=`echo $res | awk '{print index($0,"__lookup_of_hostname_failed__")}'`
 	if [ $err_index -ne 0 ]; then
 		echo "__lookup_of_hostname_failed__"
