@@ -123,7 +123,6 @@ script:
         lscpu
         rm  -f /tmp/u.py
         echo "import psutil" >  /tmp/u.py
-#        /usr/bin/env python  /tmp/u.py
         pip uninstall -y psutil
         pip install --user --pre psutil
         /usr/bin/env python  /tmp/u.py
