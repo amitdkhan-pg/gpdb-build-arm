@@ -124,7 +124,7 @@ script:
         rm  -f /tmp/u.py
         echo "import psutil" >  /tmp/u.py
         pip uninstall -y psutil
-        pip install --user --pre psutil
+        python -m pip install --user --pre psutil
         /usr/bin/env python  /tmp/u.py
       fi
   - |
