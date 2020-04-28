@@ -95,31 +95,38 @@ before_script:
     - ssh-keygen -t "rsa" -f ~/.ssh/id_rsa -N ""
     - cp ~/.ssh/{id_rsa.pub,authorized_keys}
 
+#        ./configure \
+#            --prefix=${TRAVIS_BUILD_DIR}/gpsql \
+#            --enable-cassert \
+#            --enable-debug \
+#            --enable-debug-extensions \
+#            --with-perl \
+#            --with-python \
+#            --disable-orca \
+#            --with-openssl \
+#            --with-ldap \
+#            --with-libcurl \
+#            --with-libxml \
+#            --enable-mapreduce \
+#            --enable-orafce \
+#            $C
+#        travis_wait 50 make install
+#        source ${TRAVIS_BUILD_DIR}/gpsql/greenplum_path.sh
+#        make -C gpAux/gpdemo cluster
+#        source gpAux/gpdemo/gpdemo-env.sh
+#        travis_wait 50 make -C src/test/regress installcheck-small
+#
 script:
   - |
       set -eo pipefail
       if [ "$T" = "debug" ]; then
         lscpu
-        ./configure \
-            --prefix=${TRAVIS_BUILD_DIR}/gpsql \
-            --enable-cassert \
-            --enable-debug \
-            --enable-debug-extensions \
-            --with-perl \
-            --with-python \
-            --disable-orca \
-            --with-openssl \
-            --with-ldap \
-            --with-libcurl \
-            --with-libxml \
-            --enable-mapreduce \
-            --enable-orafce \
-            $C
-        travis_wait 50 make install
-        source ${TRAVIS_BUILD_DIR}/gpsql/greenplum_path.sh
-        make -C gpAux/gpdemo cluster
-        source gpAux/gpdemo/gpdemo-env.sh
-        travis_wait 50 make -C src/test/regress installcheck-small
+        /usr/bin/env python  /tmp/u.py
+        pip uninstall -y psutil
+        pip install --user --pre psutil
+        rm  -f /tmp/u.py
+        echo "import psutil" >  /tmp/u.py
+        /usr/bin/env python  /tmp/u.py
       fi
   - |
       set -eo pipefail
