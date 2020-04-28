@@ -81,10 +81,10 @@ before_install:
 
 install:
     - mv /home/travis/.cache/pip /home/travis/temppip
-    - pip install --user --upgrade pip
+    - python -m pip install --user --upgrade pip
     - python -m pip install --user --pre psutil
-    - pip install --user lockfile
-    - pip install --user setuptools
+    - python -m pip install --user lockfile
+    - python -m pip install --user setuptools
 
 ## ----------------------------------------------------------------------
 ## Perform build:
