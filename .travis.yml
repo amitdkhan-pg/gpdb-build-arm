@@ -99,6 +99,7 @@ script:
   - |
       set -eo pipefail
       if [ "$T" = "debug" ]; then
+      ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 `hostname` ". /home/travis/build/amitdkhan-pg/gpdb-build-arm/trial_python/greenplum_path.sh; /bin/hostname"
         cat /etc/hosts
         source trial_python/greenplum_path.sh
         hostname > /tmp/hh
