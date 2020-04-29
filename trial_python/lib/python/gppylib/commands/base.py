@@ -30,7 +30,6 @@ import time
 
 from gppylib import gplog
 from gppylib import gpsubprocess
-from pygresql.pg import DB
 
 logger = gplog.get_default_logger()
 
