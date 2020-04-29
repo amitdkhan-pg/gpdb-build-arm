@@ -25,6 +25,7 @@ use the name returned by `hostname` as its not guaranteed to
 have a trusted ssh environment setup for it.
 
 '''
+import sys
 import os
 
 from gppylib.commands import base
@@ -34,6 +35,8 @@ from gppylib.utils import readAllLinesFromFile
 FILEDIR=os.path.expanduser("~")
 FILENAME=".gphostcache"
 CACHEFILE=FILEDIR + "/" + FILENAME
+
+gplog.enable_verbose_logging
 
 logger = gplog.get_default_logger()
 
@@ -78,6 +81,8 @@ class GpInterfaceToHostNameCache:
             interface = interfacesToLookup[i]
             hostname = currentHostNameAnswersForInterfaces[i]
 
+            logger.warn("interface: '%s'" % interface)
+            #sys.stdout.write("interface: %s", interface);
             # If we don't have this mapping yet set it, otherwise we simply
             # validate consistency.
             if interface not in self.__hostCache:
@@ -105,6 +110,7 @@ class GpInterfaceToHostNameCache:
             if self.__hostCache[interface] is None:
                 logger.debug("hostname lookup for %s" % interface)
                 cmd=unix.Hostname('host lookup', ctxt=base.REMOTE, remoteHost=interface)
+                logger.warn("cmd: '%s'" % cmd)
                 pool.addCommand(cmd)
                 pending_cmds[interface] = cmd
 
