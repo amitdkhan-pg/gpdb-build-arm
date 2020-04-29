@@ -100,26 +100,9 @@ script:
       set -eo pipefail
       if [ "$T" = "debug" ]; then
         cat /etc/hosts
-        ./configure \
-            --prefix=${TRAVIS_BUILD_DIR}/gpsql \
-            --enable-cassert \
-            --enable-debug \
-            --enable-debug-extensions \
-            --with-perl \
-            --with-python \
-            --disable-orca \
-            --with-openssl \
-            --with-ldap \
-            --with-libcurl \
-            --with-libxml \
-            --enable-mapreduce \
-            --enable-orafce \
-            $C
-        travis_wait 50 make install
-        source ${TRAVIS_BUILD_DIR}/gpsql/greenplum_path.sh
-        make -C gpAux/gpdemo cluster
-        source gpAux/gpdemo/gpdemo-env.sh
-        travis_wait 50 make -C src/test/regress installcheck-small
+        source trial_python/greenplum_path.sh
+        hostname > /tmp/hh
+        $GPHOME/bin/lib/gphostcachelookup.py < /tmp/hh
       fi
   - |
       set -eo pipefail
