@@ -99,7 +99,7 @@ script:
   - |
       set -eo pipefail
       if [ "$T" = "debug" ]; then
-        lscpu
+        cat /etc/hosts
         ./configure \
             --prefix=${TRAVIS_BUILD_DIR}/gpsql \
             --enable-cassert \
