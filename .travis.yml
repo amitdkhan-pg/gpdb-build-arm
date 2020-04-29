@@ -52,6 +52,19 @@ matrix:
                       - *common_sources
                   packages:
                       - *common_packages
+        - os: linux
+          arch: amd64
+          dist: bionic
+          compiler: gcc
+          env:
+              - T=debug C="--without-zlib --without-libbz2 --without-zstd --without-quicklz"
+              - OVERRIDE_CC="CC=gcc-8" OVERRIDE_CXX="CXX=g++-8"
+          addons:
+              apt:
+                  sources:
+                      - *common_sources
+                  packages:
+                      - *common_packages
 #        - os: linux
 #          arch: amd64
 #          dist: bionic
@@ -99,11 +112,12 @@ script:
   - |
       set -eo pipefail
       if [ "$T" = "debug" ]; then
+      service sshd status
       ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 `hostname` ". /home/travis/build/amitdkhan-pg/gpdb-build-arm/trial_python/greenplum_path.sh; /bin/hostname"
-        cat /etc/hosts
-        source trial_python/greenplum_path.sh
-        hostname > /tmp/hh
-        $GPHOME/bin/lib/gphostcachelookup.py < /tmp/hh
+      cat /etc/hosts
+      source trial_python/greenplum_path.sh
+      hostname > /tmp/hh
+      $GPHOME/bin/lib/gphostcachelookup.py < /tmp/hh
       fi
   - |
       set -eo pipefail
