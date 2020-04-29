@@ -32,6 +32,7 @@ addons:
             - libzstd1-dev
             - python-pip
             - net-tools
+            - ssh
 
 matrix:
     include:
