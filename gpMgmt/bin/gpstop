@@ -160,6 +160,7 @@ class GpStop:
         Run and return the exitCode for the program
         """
         self._prepare()
+        logger.info("called _prepare...")
 
         if self.masteronly:
             if self.interactive:
@@ -292,8 +293,10 @@ class GpStop:
         self._read_postgresqlconf()
         self._check_db_running()
         self._build_gparray()
+        logger.info("calling _is_hostname_valid")
         if self.onlyThisHost:
             self._is_hostname_valid()
+        logger.info("calling _check_version")
         self._check_version()
 
     ######
@@ -348,7 +351,9 @@ class GpStop:
 
         logger.info("Obtaining Segment details from master...")
         self.dburl = dbconn.DbURL(port=self.port, dbname='template1')
+        logger.info("Calling initFromCatalog...")
         self.gparray = GpArray.initFromCatalog(self.dburl, utility=True)
+        logger.info("Called initFromCatalog...")
 
     class _SigIntHandler(object):
         def __init__(self):
