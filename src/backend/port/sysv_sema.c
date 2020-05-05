@@ -151,13 +151,14 @@ IpcSemaphoreInitialize(IpcSemaphoreId semId, int semNum, int value)
 				(errmsg_internal("SEM: semctl(%d, %d, SETVAL, %d) failed: %m",
 								 semId, semNum, value)));
 
-		ereport(FATAL,
+/*		ereport(FATAL,
 				(errmsg_internal("semctl(%d, %d, SETVAL, %d) failed: %m",
 								 semId, semNum, value),
 				 (saved_errno == ERANGE) ?
 				 errhint("You possibly need to raise your kernel's SEMVMX value to be at least "
 				  "%d.  Look into the PostgreSQL documentation for details.",
 						 value) : 0));
+*/
 	}
 }
 
@@ -365,7 +366,7 @@ PGSemaphoreCreate(PGSemaphore sema)
 void
 PGSemaphoreReset(PGSemaphore sema)
 {
-	elog(LOG, "SEM: calling PGSemaphoreReset with semid : %d, semNum: %d", sema->semId, sema->semNum);
+	elog(LOG, "SEM: calling IpcSemaphoreInitialize with semid : %d, semNum: %d", sema->semId, sema->semNum);
 	IpcSemaphoreInitialize(sema->semId, sema->semNum, 0);
 }
 
