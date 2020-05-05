@@ -136,7 +136,7 @@ script:
         source ${TRAVIS_BUILD_DIR}/gpsql/greenplum_path.sh
         make -C gpAux/gpdemo cluster
         source gpAux/gpdemo/gpdemo-env.sh
-        make -C src/test/regress installcheck-1
+        make -C src/test/regress installcheck-small
       fi
   - |
       set -eo pipefail
