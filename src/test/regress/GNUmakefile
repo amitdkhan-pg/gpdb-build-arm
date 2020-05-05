@@ -191,6 +191,13 @@ installcheck: installcheck-good
 installcheck-small: all
 	$(pg_regress_installcheck) $(REGRESS_OPTS) --schedule=$(srcdir)/parallel_schedule $(EXTRA_TESTS)
 
+installcheck-1: all
+	$(pg_regress_installcheck) $(REGRESS_OPTS) --schedule=$(srcdir)/schedule1 $(EXTRA_TESTS)
+installcheck-2: all
+	$(pg_regress_installcheck) $(REGRESS_OPTS) --schedule=$(srcdir)/schedule2 $(EXTRA_TESTS)
+installcheck-3: all
+	$(pg_regress_installcheck) $(REGRESS_OPTS) --schedule=$(srcdir)/schedule3 $(EXTRA_TESTS)
+
 installcheck-good: all twophase_pqexecparams hooktest query_info_hook_test
 	$(pg_regress_installcheck) $(REGRESS_OPTS) --schedule=$(srcdir)/parallel_schedule --schedule=$(srcdir)/greenplum_schedule $(EXTRA_TESTS)
 

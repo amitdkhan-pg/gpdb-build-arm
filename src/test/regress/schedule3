@@ -1,0 +1,54 @@
+
+# MATERIALIZED_VIEW_FIXME : matview is not supported on greenplum. Enable the test when the feature is ready.
+test: matview
+
+# ----------
+# Another group of parallel tests
+# ----------
+test: alter_generic alter_operator misc psql async dbsize misc_functions
+
+# rules cannot run concurrently with any test that creates a view
+#
+# 'rules' test is disabled in GPDB. Maintaining the list of views in it is
+# too painful, and there are also errors because of cross-segment UPDATEs
+# and functions.
+#
+# GPDB_84_MERGE_FIXME: While disabling this was not really an effect of the 8.4
+# merge, it was done a long time ago, it's time to revisit this so we can re-
+# enable it
+#test: rules
+test: psql_crosstab select_parallel amutils
+
+# ----------
+# Another group of parallel tests
+# ----------
+test: select_views portals_p2 cluster dependency guc bitmapops tsearch tsdicts foreign_data window xmlmap functional_deps advisory_lock json jsonb json_encoding indirect_toast equivclass
+
+# Output of the 'combocid' test contains ctid and cmin values, which will
+# differ depending on how many segments are used. Hence disabled in GPDB.
+#test: combocid
+
+# 'foreign_key' test is disabled, because it contains several tables with
+# multiple UNIQUE constraints, which is not supported in GPDB.
+#test: foreign_key
+
+# ----------
+# Another group of parallel tests
+# NB: temp.sql does a reconnect which transiently uses 2 connections,
+# so keep this parallel group to at most 19 tests
+# ----------
+test: plancache limit plpgsql copy2 temp domain rangefuncs prepare without_oid conversion truncate truncate_gp alter_table alter_extension sequence polymorphism rowtypes returning with xml gp_foreign_data
+
+# large objects are not supported by GPDB
+# test: largeobject
+
+# event triggers cannot run concurrently with any test that runs DDL
+test: event_trigger
+
+# run stats by itself because its delay may be insufficient under heavy load
+#
+# 'stats' test has been disabled in GPDB, because it tries to set stats-related
+# GUCs stats_block_level and stats_row_level, which have been removed from
+# GPDB.
+#test: stats
+
