@@ -138,9 +138,18 @@ IpcSemaphoreInitialize(IpcSemaphoreId semId, int semNum, int value)
 	union semun semun;
 
 	semun.val = value;
+
+	if (value == 0)
+		ereport(LOG,
+				(errmsg_internal("SEM: Calling semctl(%d, %d, SETVAL, %d)",
+								 semId, semNum, value)));
+
 	if (semctl(semId, semNum, SETVAL, semun) < 0)
 	{
 		int			saved_errno = errno;
+		ereport(LOG,
+				(errmsg_internal("SEM: semctl(%d, %d, SETVAL, %d) failed: %m",
+								 semId, semNum, value)));
 
 		ereport(FATAL,
 				(errmsg_internal("semctl(%d, %d, SETVAL, %d) failed: %m",
@@ -356,6 +365,7 @@ PGSemaphoreCreate(PGSemaphore sema)
 void
 PGSemaphoreReset(PGSemaphore sema)
 {
+	elog(LOG, "SEM: calling PGSemaphoreReset with semid : %d, semNum: %d", sema->semId, sema->semNum);
 	IpcSemaphoreInitialize(sema->semId, sema->semNum, 0);
 }
 

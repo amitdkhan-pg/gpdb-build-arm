@@ -1451,6 +1451,7 @@ REGISTER_MIRRORS () {
 STOP_QD_PRODUCTION () {
     LOG_MSG "[INFO]:-Start Function $FUNCNAME"
     LOG_MSG "[INFO]:-Restarting the Greenplum instance in production mode" 1
+	ipcs -s
     if [ -f $GPSTOP ]; then
         GPSTOP_OPTS=$(OUTPUT_LEVEL_OPTS)
         export MASTER_DATA_DIRECTORY=${MASTER_DIRECTORY}/${SEG_PREFIX}-1
@@ -1464,6 +1465,7 @@ STOP_QD_PRODUCTION () {
     else
         ERROR_EXIT "[FATAL]:-$GPSTOP not located"
     fi
+	ipcs -s
     LOG_MSG "[INFO]:-End Function $FUNCNAME"
 }
 

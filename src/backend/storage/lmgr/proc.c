@@ -536,6 +536,7 @@ InitProcess(void)
 	 * be careful and reinitialize its value here.  (This is not strictly
 	 * necessary anymore, but seems like a good idea for cleanliness.)
 	 */
+	elog(LOG, "SEM: InitProcess calling PGSemaphoreReset");
 	PGSemaphoreReset(&MyProc->sem);
 
 	/* Set wait portal (do not check if resource scheduling is enabled) */
