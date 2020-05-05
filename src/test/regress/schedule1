@@ -30,3 +30,81 @@ test: point lseg line box path polygon circle date time timetz timestamp timesta
 # horology depends on interval, timetz, timestamp, timestamptz, reltime and abstime
 # ----------
 test: geometry horology regex oidjoins type_sanity opr_sanity
+#===================================================
+# ----------
+# These four each depend on the previous one
+# ----------
+test: insert
+test: insert_conflict
+test: create_function_1
+test: create_type
+test: create_table
+test: create_function_2
+
+# ----------
+# Load huge amounts of data
+# We should split the data files into single files and then
+# execute two copy tests parallel, to check that copy itself
+# is concurrent safe.
+# ----------
+test: copy copyselect copydml
+
+# ----------
+# More groups of parallel tests
+# ----------
+test: create_misc create_operator
+# These depend on the above two
+test: create_index create_view
+# Depends on things setup for create_index
+test: gp_gin_index
+
+# ----------
+# Another group of parallel tests
+# ----------
+test: create_aggregate create_function_3 create_cast constraints triggers inherit create_table_like typed_table vacuum drop_if_exists updatable_views rolenames roleattributes create_am
+
+# ----------
+# Because vacuum will detect concurrently running transactions, it is necessary to
+# run this test on its own, or it might not detect the pages are 'all visible'
+# ----------
+test: vacuum_stats
+
+# ----------
+# sanity_check does a vacuum, affecting the sort order of SELECT *
+# results. So it should not run parallel to other tests.
+#
+# Disabled in GPDB. FIXME: why?
+# ----------
+#test: sanity_check
+
+# ----------
+# Believe it or not, select creates a table, subsequent
+# tests need.
+# ----------
+test: errors
+test: select
+ignore: random
+
+# ----------
+# Another group of parallel tests
+# ----------
+test: select_into select_distinct select_distinct_on select_implicit select_having subselect union case join aggregates random portals arrays btree_index hash_index update delete
+
+# In PostgreSQL, namespace test is run as part of the fourth group, but there
+# are some GPDB additions in it that will show diff if concurrent tests use
+# temporary tables. So run it separately.
+test: namespace
+
+# 2-phase commit is not supported by GPDB.
+#test: prepared_xacts
+
+# The 'transactions' test is disabled in GPDB, because it uses functions
+# in segments in a way that doesn't work:
+# ERROR:  function cannot execute on a QE slice because it accesses relation "public.xacttest"
+#test: transactions
+
+# ----------
+# Another group of parallel tests
+# ----------
+test: brin gin gist spgist privileges init_privs security_label collate lock replica_identity rowsecurity object_address tablesample groupingsets drop_operator join_hash
+
