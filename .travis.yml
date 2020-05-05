@@ -135,8 +135,6 @@ script:
         travis_wait 50 make install
         source ${TRAVIS_BUILD_DIR}/gpsql/greenplum_path.sh
         make -C gpAux/gpdemo cluster
-        cat gpAux/gpdemo/datadirs/gpAdminLogs/gpstop*
-        grep -w SEM  gpAux/gpdemo/datadirs/*/* 2> /dev/null
         source gpAux/gpdemo/gpdemo-env.sh
         travis_wait 50 make -C src/test/regress installcheck-small
       fi
