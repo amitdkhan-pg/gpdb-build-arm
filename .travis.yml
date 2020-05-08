@@ -95,24 +95,24 @@ matrix:
           dist: bionic
           compiler: gcc
           env:
-              - tests=unit T=debug C=""
+              - T=debug C=""
               - OVERRIDE_CC="CC=gcc-8" OVERRIDE_CXX="CXX=g++-8"
           addons:
               apt:
                   sources: *common_sources
                   packages: *common_packages
         # ARM64, Ubuntu Bionic, gcc 8, installcheck
-        - os: linux
-          arch: arm64
-          dist: bionic
-          compiler: gcc
-          env:
-              - tests=installcheck T=debug C=""
-              - OVERRIDE_CC="CC=gcc-8" OVERRIDE_CXX="CXX=g++-8"
-          addons:
-              apt:
-                  sources: *common_sources
-                  packages: *common_packages
+#        - os: linux
+#          arch: arm64
+#          dist: bionic
+#          compiler: gcc
+#          env:
+#              - tests=installcheck T=debug C=""
+#              - OVERRIDE_CC="CC=gcc-8" OVERRIDE_CXX="CXX=g++-8"
+#          addons:
+#              apt:
+#                  sources: *common_sources
+#                  packages: *common_packages
 
 ## ----------------------------------------------------------------------
 ## Build tools
