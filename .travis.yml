@@ -115,8 +115,9 @@ before_install:
       fi
       systemctl show systemd-logind.service  | grep Remo
       echo "RemoveIPC=no" | sudo tee -a /etc/systemd/logind.conf
+      sudo  systemctl daemon-reload
+      sudo systemctl restart systemd-logind
       systemctl show systemd-logind.service  | grep Remo
-      errrrr
 
 ## ----------------------------------------------------------------------
 ## Install supporting Python modules
