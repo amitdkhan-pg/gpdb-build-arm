@@ -114,6 +114,8 @@ before_install:
         esac
       fi
       echo "RemoveIPC=no" | sudo tee -a /etc/systemd/logind.conf
+      sudo systemctl daemon-reload
+      sudo systemctl restart systemd-logind
 
 ## ----------------------------------------------------------------------
 ## Install supporting Python modules
