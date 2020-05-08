@@ -64,11 +64,6 @@ function install_deps() {
   esac
 }
 
-function link_python() {
-  tar xf python-tarball/python-*.tar.gz -C $(pwd)/${GPDB_SRC_PATH}/gpAux/ext
-  ln -sf $(pwd)/${GPDB_SRC_PATH}/gpAux/ext/${BLD_ARCH}/python-2.7.12 /opt/python-2.7.12
-}
-
 function generate_build_number() {
   pushd ${GPDB_SRC_PATH}
     #Only if its git repro, add commit SHA as build number
@@ -143,23 +138,6 @@ function include_quicklz() {
   pushd ${GREENPLUM_INSTALL_DIR}
     cp -d ${libdir}/libquicklz.so* lib
   popd
-}
-
-function include_libstdcxx() {
-  if [ "${TARGET_OS}" == "centos" ] ; then
-    pushd /opt/gcc-6*/lib64
-      for libfile in libstdc++.so.*; do
-        case $libfile in
-          *.py)
-            ;; # we don't vendor libstdc++.so.*-gdb.py
-          *)
-            cp -d "$libfile" ${GREENPLUM_INSTALL_DIR}/lib
-            ;; # vendor everything else
-        esac
-      done
-    popd
-  fi
-
 }
 
 function export_gpdb() {
@@ -237,7 +215,6 @@ function _main() {
       build_xerces
       test_orca
       install_deps
-      link_python
       ;;
     win32)
         export BLD_ARCH=win32
@@ -271,7 +248,6 @@ function _main() {
   fi
   include_zstd
   include_quicklz
-  include_libstdcxx
   export_gpdb
   export_gpdb_extensions
   export_gpdb_win32_ccl

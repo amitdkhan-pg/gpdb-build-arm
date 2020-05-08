@@ -332,9 +332,8 @@ standard_planner(Query *parse, int cursorOptions, ParamListInfo boundParams)
 	glob->numSlices = 0;
 	glob->slices = NULL;
 	/* ApplyShareInputContext initialization. */
-	glob->share.producers = NULL;
-	glob->share.producer_count = 0;
-	glob->share.sliceMarks = NULL;
+	glob->share.shared_inputs = NULL;
+	glob->share.shared_input_count = 0;
 	glob->share.motStack = NIL;
 	glob->share.qdShares = NIL;
 
@@ -596,15 +595,15 @@ standard_planner(Query *parse, int cursorOptions, ParamListInfo boundParams)
 		 * will re-populate it, but clear it for now, just to make sure that
 		 * we don't access the obsolete copies of the nodes.
 		 */
-		if (glob->share.producer_count > 0)
-			memset(glob->share.producers, 0, glob->share.producer_count * sizeof(ShareInputScan *));
+		if (glob->share.shared_input_count > 0)
+			memset(glob->share.shared_inputs, 0, glob->share.shared_input_count * sizeof(ApplyShareInputContextPerShare));
 
 		/*
 		 * cdb_build_slice_table() may create additional slices that may affect
 		 * share input. need to mark material nodes that are split acrossed
 		 * multi slices.
 		 */
-		top_plan = apply_shareinput_xslice(top_plan, root, glob->slices);
+		top_plan = apply_shareinput_xslice(top_plan, root);
 	}
 
 	/* build the PlannedStmt result */
@@ -762,12 +761,6 @@ subquery_planner(PlannerGlobal *glob, Query *parse,
 	if (parse->cteList)
 		SS_process_ctes(root);
 #endif
-
-	/*
-	 * Ensure that jointree has been normalized. See
-	 * normalize_query_jointree_mutator()
-	 */
-	AssertImply(parse->jointree->fromlist, list_length(parse->jointree->fromlist) == 1);
 
 	/*
 	 * Look for ANY and EXISTS SubLinks in WHERE and JOIN/ON clauses, and try
@@ -1902,7 +1895,7 @@ grouping_planner(PlannerInfo *root, bool inheritance_update,
 		(root->config->honor_order_by || !root->parent_root) &&
 		parse->parentStmtType == PARENTSTMTTYPE_NONE &&
 		!parse->isTableValueSelect &&
-		!parse->limitCount && !parse->limitOffset)
+		!limit_needed(parse))
 	{
 		must_gather = true;
 	}
