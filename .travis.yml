@@ -30,6 +30,7 @@ addons:
             - libapr1-dev
             - libzstd1
             - libzstd1-dev
+            - net-tools
             - ssh
 
 matrix:
