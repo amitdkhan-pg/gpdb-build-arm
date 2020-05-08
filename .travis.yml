@@ -121,6 +121,9 @@ matrix:
 python:
     - "2.7"
 
+# For linux, to prevent a possible crash in gpstop, disable RemoveIPC. See:
+# https://www.postgresql.org/docs/current/kernel-resources.html#SYSTEMD-REMOVEIPC
+
 before_install:
     - eval "${OVERRIDE_CC}"
     - eval "${OVERRIDE_CXX}"
@@ -136,9 +139,11 @@ before_install:
             ;;
         esac
       fi
-      echo "RemoveIPC=no" | sudo tee -a /etc/systemd/logind.conf
-      sudo systemctl daemon-reload
-      sudo systemctl restart systemd-logind
+      if [ "${TRAVIS_OS_NAME}" = linux ]; then
+        echo "RemoveIPC=no" | sudo tee -a /etc/systemd/logind.conf
+        sudo systemctl daemon-reload
+        sudo systemctl restart systemd-logind
+      fi
 
 ## ----------------------------------------------------------------------
 ## Install supporting Python modules
