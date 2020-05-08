@@ -29,8 +29,6 @@ addons:
             - libapr1-dev
             - libzstd1
             - libzstd1-dev
-            - python-pip
-            - net-tools
             - ssh
 
 matrix:
@@ -122,7 +120,6 @@ before_install:
 ## ----------------------------------------------------------------------
 
 install:
-    - mv /home/travis/.cache/pip /home/travis/temppip
     - python -m pip install --user --upgrade pip
     - python -m pip install --user --pre psutil
     - python -m pip install --user lockfile
@@ -130,7 +127,6 @@ install:
 
 ## ----------------------------------------------------------------------
 ## Perform build:
-##        Skipping this one : travis_wait 50 make -s unittest-check
 ## ----------------------------------------------------------------------
 
 before_script:
@@ -141,10 +137,6 @@ script:
   - |
       set -eo pipefail
       if [ "$T" = "debug" ]; then
-        service sshd status
-        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 `hostname` ". /home/travis/build/amitdkhan-pg/gpdb-build-arm/trial_python/greenplum_path.sh; /bin/hostname"
-        cat /etc/os-release
-        grep RemoveIPC  /etc/systemd/logind.conf
         ./configure \
             --prefix=${TRAVIS_BUILD_DIR}/gpsql \
             --enable-cassert \
@@ -160,7 +152,7 @@ script:
             --enable-mapreduce \
             --enable-orafce \
             $C
-        travis_wait 50 make install
+        travis_wait 50 make -s install
         source ${TRAVIS_BUILD_DIR}/gpsql/greenplum_path.sh
         if [ "$tests" = "unit" ]; then
             make -s unittest-check
@@ -186,7 +178,7 @@ script:
             --enable-mapreduce \
             --enable-orafce \
             $C
-        make install
+        travis_wait 50 make -s install
         source ${TRAVIS_BUILD_DIR}/gpsql/greenplum_path.sh
         make -s unittest-check
         make -C gpAux/gpdemo cluster
