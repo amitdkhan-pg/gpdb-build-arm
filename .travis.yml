@@ -2,7 +2,8 @@
 ## Travis CI build script for Greenplum Database Open Source Project.
 ## ----------------------------------------------------------------------
 
-language: c
+language: cpp
+cache: ccache
 
 branches:
   only:
@@ -36,13 +37,12 @@ matrix:
         # OS and Compiler variations
         # ----------------------------------------------------------------
         #
-        # Ubuntu Bionic on aarch64, gcc 8, without compression libraries, unit tests
+        # Ubuntu Bionic, gcc 8
         - os: linux
-          arch: arm64
           dist: bionic
           compiler: gcc
           env:
-              - tests=unit T=debug C="--without-zlib --without-libbz2 --without-zstd --without-quicklz"
+              - T=debug C=""
               - OVERRIDE_CC="CC=gcc-8" OVERRIDE_CXX="CXX=g++-8"
           addons:
               apt:
@@ -50,22 +50,36 @@ matrix:
                       - *common_sources
                   packages:
                       - *common_packages
-        # Ubuntu Bionic on aarch64, gcc 8, without compression libraries, installcheck
+        # Ubuntu Xenial, clang 7
         - os: linux
-          arch: arm64
-          dist: bionic
-          compiler: gcc
+          dist: xenial
+          compiler: clang
           env:
-              - tests=installcheck T=debug C="--without-zlib --without-libbz2 --without-zstd --without-quicklz"
-              - OVERRIDE_CC="CC=gcc-8" OVERRIDE_CXX="CXX=g++-8"
+              - T=debug C=""
+              - OVERRIDE_CC="CC=clang-7" OVERRIDE_CXX="CXX=clang++-7"
           addons:
               apt:
                   sources:
                       - *common_sources
+                      - llvm-toolchain-xenial-7
                   packages:
                       - *common_packages
+                      - clang-7
+        # macOS, XCode11
+        - os: osx
+          compiler: clang
+          osx_image: xcode11
+          env: T=macos
+          addons:
+            homebrew:
+              packages:
+                - ccache
+        #
+        # Configuration variations
+        # ----------------------------------------------------------------
+        #
+        # Debug build without any compression algorithms supplied
         - os: linux
-          arch: amd64
           dist: bionic
           compiler: gcc
           env:
@@ -73,21 +87,32 @@ matrix:
               - OVERRIDE_CC="CC=gcc-8" OVERRIDE_CXX="CXX=g++-8"
           addons:
               apt:
-                  sources:
-                      - *common_sources
-                  packages:
-                      - *common_packages
-#        - os: linux
-#          arch: amd64
-#          dist: bionic
-#          compiler: gcc
-#          env:
-#              - T=debug C="--without-zlib --without-libbz2 --without-zstd --without-quicklz"
-#              - OVERRIDE_CC="CC=gcc-8" OVERRIDE_CXX="CXX=g++-8"
-#          addons:
-#              apt:
-#                  sources: *common_sources
-#                  packages: *common_packages
+                  sources: *common_sources
+                  packages: *common_packages
+        # ARM64, Ubuntu Bionic, gcc 8, unit tests
+        - os: linux
+          arch: arm64
+          dist: bionic
+          compiler: gcc
+          env:
+              - tests=unit T=debug C=""
+              - OVERRIDE_CC="CC=gcc-8" OVERRIDE_CXX="CXX=g++-8"
+          addons:
+              apt:
+                  sources: *common_sources
+                  packages: *common_packages
+        # ARM64, Ubuntu Bionic, gcc 8, installcheck
+        - os: linux
+          arch: arm64
+          dist: bionic
+          compiler: gcc
+          env:
+              - tests=installcheck T=debug C=""
+              - OVERRIDE_CC="CC=gcc-8" OVERRIDE_CXX="CXX=g++-8"
+          addons:
+              apt:
+                  sources: *common_sources
+                  packages: *common_packages
 
 ## ----------------------------------------------------------------------
 ## Build tools
@@ -132,6 +157,7 @@ install:
 before_script:
     - ssh-keygen -t "rsa" -f ~/.ssh/id_rsa -N ""
     - cp ~/.ssh/{id_rsa.pub,authorized_keys}
+    - ccache --zero-stats
 
 script:
   - |
@@ -154,10 +180,10 @@ script:
             $C
         travis_wait 50 make -s install
         source ${TRAVIS_BUILD_DIR}/gpsql/greenplum_path.sh
-        if [ "$tests" = "unit" ]; then
+        if [ -z "$tests" ] || [ "$tests" = "unit" ]; then
             make -s unittest-check
         fi
-        if [ "$tests" = "installcheck" ]; then
+        if [ -z "$tests" ] || [ "$tests" = "installcheck" ]; then
             make -C gpAux/gpdemo cluster
             source gpAux/gpdemo/gpdemo-env.sh
             make -C src/test/regress installcheck-small
@@ -205,6 +231,7 @@ script:
       fi
 
 after_script:
+  - ccache --show-stats
   - source ${TRAVIS_BUILD_DIR}/gpsql/greenplum_path.sh
   - postgres --version
   - gpssh --version
