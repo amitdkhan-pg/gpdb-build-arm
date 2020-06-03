@@ -217,6 +217,9 @@ SELECT * FROM agg_csv FOR UPDATE;
   42 |  324.78
 (3 rows)
 
+-- copy from isn't supported either
+COPY agg_csv FROM STDIN;
+ERROR:  cannot insert into foreign table "agg_csv"
 -- constraint exclusion tests
 \t on
 EXPLAIN (VERBOSE, COSTS FALSE) SELECT * FROM agg_csv WHERE a < 0;
@@ -276,9 +279,9 @@ SELECT tableoid::regclass, * FROM ONLY agg;
 
 -- updates aren't supported
 UPDATE agg SET a = 1;
-ERROR:  incompatible loci in target inheritance set
+ERROR:  ModifyTable mixes distributed and entry-only tables
 DELETE FROM agg WHERE a = 100;
-ERROR:  incompatible loci in target inheritance set
+ERROR:  ModifyTable mixes distributed and entry-only tables
 -- but this should be allowed
 SELECT tableoid::regclass, * FROM agg FOR UPDATE;
  tableoid |  a  |    b    

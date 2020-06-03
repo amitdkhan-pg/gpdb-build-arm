@@ -372,7 +372,7 @@ _outQueryDispatchDesc(StringInfo str, const QueryDispatchDesc *node)
 {
 	WRITE_NODE_TYPE("QUERYDISPATCHDESC");
 
-	WRITE_STRING_FIELD(intoTableSpaceName);
+	WRITE_NODE_FIELD(intoCreateStmt);
 	WRITE_NODE_FIELD(paramInfo);
 	WRITE_NODE_FIELD(oidAssignments);
 	WRITE_NODE_FIELD(sliceTable);
@@ -701,7 +701,6 @@ _outExternalScanInfo(StringInfo str, const ExternalScanInfo *node)
 	WRITE_NODE_TYPE("EXTERNALSCANINFO");
 
 	WRITE_NODE_FIELD(uriList);
-	WRITE_STRING_FIELD(fmtOptString);
 	WRITE_CHAR_FIELD(fmtType);
 	WRITE_BOOL_FIELD(isMasterOnly);
 	WRITE_INT_FIELD(rejLimit);
@@ -863,6 +862,7 @@ _outFunctionScan(StringInfo str, const FunctionScan *node)
 	WRITE_BOOL_FIELD(funcordinality);
 	WRITE_NODE_FIELD(param);
 	WRITE_BOOL_FIELD(resultInTupleStore);
+	WRITE_INT_FIELD(initplanId);
 }
 
 static void
@@ -1112,9 +1112,6 @@ _outMaterial(StringInfo str, const Material *node)
 
 	WRITE_BOOL_FIELD(cdb_strict);
 	WRITE_BOOL_FIELD(cdb_shield_child_from_rescans);
-
-	WRITE_ENUM_FIELD(share_type, ShareType);
-	WRITE_INT_FIELD(share_id);
 }
 
 static void
@@ -1122,7 +1119,7 @@ _outShareInputScan(StringInfo str, const ShareInputScan *node)
 {
 	WRITE_NODE_TYPE("SHAREINPUTSCAN");
 
-	WRITE_ENUM_FIELD(share_type, ShareType);
+	WRITE_BOOL_FIELD(cross_slice);
 	WRITE_INT_FIELD(share_id);
 	WRITE_INT_FIELD(producer_slice_id);
 	WRITE_INT_FIELD(this_slice_id);
@@ -1161,9 +1158,6 @@ _outSort(StringInfo str, const Sort *node)
 
 	/* CDB */
     WRITE_BOOL_FIELD(noduplicates);
-
-	WRITE_ENUM_FIELD(share_type, ShareType);
-	WRITE_INT_FIELD(share_id);
 }
 #endif /* COMPILING_BINARY_FUNCS */
 
@@ -1323,6 +1317,8 @@ _outMotion(StringInfo str, const Motion *node)
 		appendStringInfo(str, " %u", node->collations[i]);
 
 	WRITE_INT_FIELD(segidColIdx);
+
+	WRITE_INT_FIELD(numHashSegments);
 
 	/* senderSliceInfo is intentionally omitted. It's only used during planning */
 
@@ -2626,7 +2622,7 @@ _outPlannerGlobal(StringInfo str, const PlannerGlobal *node)
 	WRITE_BOOL_FIELD(transientPlan);
 	WRITE_BOOL_FIELD(oneoffPlan);
 	WRITE_NODE_FIELD(share.motStack);
-	WRITE_NODE_FIELD(share.qdShares);
+	WRITE_BITMAPSET_FIELD(share.qdShares);
 	WRITE_BOOL_FIELD(dependsOnRole);
 	WRITE_BOOL_FIELD(parallelModeOK);
 	WRITE_BOOL_FIELD(parallelModeNeeded);
@@ -2875,6 +2871,7 @@ _outParamPathInfo(StringInfo str, const ParamPathInfo *node)
 	WRITE_FLOAT_FIELD(ppi_rows, "%.0f");
 	WRITE_NODE_FIELD(ppi_clauses);
 }
+#endif /* COMPILING_BINARY_FUNCS */
 
 static void
 _outRestrictInfo(StringInfo str, const RestrictInfo *node)
@@ -2907,6 +2904,7 @@ _outRestrictInfo(StringInfo str, const RestrictInfo *node)
 	WRITE_OID_FIELD(hashjoinoperator);
 }
 
+#ifndef COMPILING_BINARY_FUNCS
 static void
 _outPlaceHolderVar(StringInfo str, const PlaceHolderVar *node)
 {
@@ -3068,9 +3066,20 @@ _outCreateForeignTableStmt(StringInfo str, const CreateForeignTableStmt *node)
 
 	WRITE_STRING_FIELD(servername);
 	WRITE_NODE_FIELD(options);
+	WRITE_NODE_FIELD(distributedBy);
 }
 
 #endif /* COMPILING_BINARY_FUNCS */
+
+static void
+_outDistributionKeyElem(StringInfo str, const DistributionKeyElem *node)
+{
+	WRITE_NODE_TYPE("DISTRIBUTIONKEYELEM");
+
+	WRITE_STRING_FIELD(name);
+	WRITE_NODE_FIELD(opclass);
+	WRITE_LOCATION_FIELD(location);
+}
 
 static void
 _outColumnReferenceStorageDirective(StringInfo str, const ColumnReferenceStorageDirective *node)
@@ -5766,6 +5775,9 @@ outNode(StringInfo str, const void *obj)
 				break;
 			case T_CreateForeignTableStmt:
 				_outCreateForeignTableStmt(str, obj);
+				break;
+			case T_DistributionKeyElem:
+				_outDistributionKeyElem(str, obj);
 				break;
 			case T_ColumnReferenceStorageDirective:
 				_outColumnReferenceStorageDirective(str, obj);

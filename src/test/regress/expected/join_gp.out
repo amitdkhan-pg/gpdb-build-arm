@@ -1225,10 +1225,9 @@ inner join lateral
 on true;
                                                            QUERY PLAN                                                            
 ---------------------------------------------------------------------------------------------------------------------------------
- Nested Loop  (cost=10000000001.10..10000000002.21 rows=4 width=20)
-   ->  Materialize  (cost=0.00..1.07 rows=2 width=12)
-         ->  Gather Motion 3:1  (slice1; segments: 3)  (cost=0.00..1.06 rows=2 width=12)
-               ->  Seq Scan on t_mylog_issue_8860 ml1  (cost=0.00..1.02 rows=1 width=12)
+ Nested Loop  (cost=10000000001.10..10000000002.20 rows=4 width=20)
+   ->  Gather Motion 3:1  (slice1; segments: 3)  (cost=0.00..1.06 rows=2 width=12)
+         ->  Seq Scan on t_mylog_issue_8860 ml1  (cost=0.00..1.02 rows=1 width=12)
    ->  Materialize  (cost=1.10..1.12 rows=1 width=8)
          ->  Subquery Scan on ml2  (cost=1.10..1.11 rows=1 width=8)
                ->  Limit  (cost=1.10..1.10 rows=1 width=12)
@@ -1240,7 +1239,7 @@ on true;
                                        ->  Gather Motion 3:1  (slice2; segments: 3)  (cost=0.00..1.06 rows=2 width=12)
                                              ->  Seq Scan on t_mylog_issue_8860  (cost=0.00..1.02 rows=1 width=12)
  Optimizer: Postgres query optimizer
-(15 rows)
+(14 rows)
 
 select ml1.myid, log_date as first_date, ml2.next_date from t_mylog_issue_8860 ml1
 inner join lateral
@@ -1345,7 +1344,7 @@ select p from
           (box(point(0.8,0.8), point(1.0,1.0)))) as v(bb)
 cross join lateral
   (select p from gist_tbl_github9733 where p <@ bb order by p <-> bb[0] limit 2) ss;
-ERROR:  could not devise a query plan for the given query (pathnode.c:469)
+ERROR:  could not devise a query plan for the given query (pathnode.c:472)
 reset enable_seqscan;
 explain (costs off)
 select p from
@@ -1388,3 +1387,86 @@ cross join lateral
 (6 rows)
 
 reset enable_bitmapscan;
+---
+--- Test that GUC enable_hashagg takes effect for SEMI join
+---
+drop table if exists foo;
+drop table if exists bar;
+create table foo(a int) distributed by (a);
+create table bar(b int) distributed by (b);
+insert into foo select i from generate_series(1,10)i;
+insert into bar select i from generate_series(1,1000)i;
+analyze foo;
+analyze bar;
+set enable_hashagg to on;
+explain (costs off)
+select * from foo where exists (select 1 from bar where foo.a = bar.b);
+                         QUERY PLAN                         
+------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)
+   ->  HashAggregate
+         Group Key: (RowIdExpr)
+         ->  Redistribute Motion 3:3  (slice2; segments: 3)
+               Hash Key: (RowIdExpr)
+               ->  Hash Join
+                     Hash Cond: (bar.b = foo.a)
+                     ->  Seq Scan on bar
+                     ->  Hash
+                           ->  Seq Scan on foo
+ Optimizer: Postgres query optimizer
+(11 rows)
+
+select * from foo where exists (select 1 from bar where foo.a = bar.b);
+ a  
+----
+ 10
+  9
+  3
+  7
+  4
+  5
+  8
+  1
+  2
+  6
+(10 rows)
+
+set enable_hashagg to off;
+explain (costs off)
+select * from foo where exists (select 1 from bar where foo.a = bar.b);
+                               QUERY PLAN                               
+------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)
+   ->  Result
+         ->  Unique
+               Group Key: (RowIdExpr)
+               ->  Sort
+                     Sort Key (Distinct): (RowIdExpr)
+                     ->  Redistribute Motion 3:3  (slice2; segments: 3)
+                           Hash Key: (RowIdExpr)
+                           ->  Hash Join
+                                 Hash Cond: (bar.b = foo.a)
+                                 ->  Seq Scan on bar
+                                 ->  Hash
+                                       ->  Seq Scan on foo
+ Optimizer: Postgres query optimizer
+(14 rows)
+
+select * from foo where exists (select 1 from bar where foo.a = bar.b);
+ a  
+----
+  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+ 10
+(10 rows)
+
+reset enable_hashagg;
+drop table foo;
+drop table bar;

@@ -2120,6 +2120,18 @@ _readColumnDef(void)
 	READ_DONE();
 }
 
+static DistributionKeyElem *
+_readDistributionKeyElem(void)
+{
+	READ_LOCALS(DistributionKeyElem);
+
+	READ_STRING_FIELD(name);
+	READ_NODE_FIELD(opclass);
+	READ_LOCATION_FIELD(location);
+
+	READ_DONE();
+}
+
 static ColumnRef *
 _readColumnRef(void)
 {
@@ -2826,6 +2838,7 @@ _readFunctionScan(void)
 	READ_BOOL_FIELD(funcordinality);
 	READ_NODE_FIELD(param);
 	READ_BOOL_FIELD(resultInTupleStore);
+	READ_INT_FIELD(initplanId);
 
 	READ_DONE();
 }
@@ -3032,9 +3045,6 @@ _readMaterial(void)
 	READ_BOOL_FIELD(cdb_strict);
 	READ_BOOL_FIELD(cdb_shield_child_from_rescans);
 
-	READ_ENUM_FIELD(share_type, ShareType);
-	READ_INT_FIELD(share_id);
-
 	READ_DONE();
 }
 
@@ -3056,9 +3066,6 @@ _readSort(void)
 
     /* CDB */
 	READ_BOOL_FIELD(noduplicates);
-
-	READ_ENUM_FIELD(share_type, ShareType);
-	READ_INT_FIELD(share_id);
 
 	READ_DONE();
 }
@@ -3329,6 +3336,38 @@ _readAlternativeSubPlan(void)
 	READ_LOCALS(AlternativeSubPlan);
 
 	READ_NODE_FIELD(subplans);
+
+	READ_DONE();
+}
+
+static RestrictInfo *
+_readRestrictInfo(void)
+{
+	READ_LOCALS(RestrictInfo);
+
+	/* NB: this isn't a complete set of fields */
+	READ_NODE_FIELD(clause);
+	READ_BOOL_FIELD(is_pushed_down);
+	READ_BOOL_FIELD(outerjoin_delayed);
+	READ_BOOL_FIELD(can_join);
+	READ_BOOL_FIELD(pseudoconstant);
+	READ_BOOL_FIELD(contain_outer_query_references);
+	READ_BITMAPSET_FIELD(clause_relids);
+	READ_BITMAPSET_FIELD(required_relids);
+	READ_BITMAPSET_FIELD(outer_relids);
+	READ_BITMAPSET_FIELD(nullable_relids);
+	READ_BITMAPSET_FIELD(left_relids);
+	READ_BITMAPSET_FIELD(right_relids);
+	READ_NODE_FIELD(orclause);
+
+	READ_FLOAT_FIELD(norm_selec);
+	READ_FLOAT_FIELD(outer_selec);
+	READ_NODE_FIELD(mergeopfamilies);
+
+	READ_NODE_FIELD(left_em);
+	READ_NODE_FIELD(right_em);
+	READ_BOOL_FIELD(outer_is_left);
+	READ_OID_FIELD(hashjoinoperator);
 
 	READ_DONE();
 }
@@ -4257,6 +4296,8 @@ parseNodeString(void)
 		return_value = _readSubPlan();
 	else if (MATCH("ALTERNATIVESUBPLAN", 18))
 		return_value = _readAlternativeSubPlan();
+	else if (MATCH("RESTRICTINFO", 12))
+		return_value = _readRestrictInfo();
 	else if (MATCH("EXTENSIBLENODE", 14))
 		return_value = _readExtensibleNode();
 
@@ -4361,6 +4402,8 @@ parseNodeString(void)
 		return_value = _readDropRoleStmt();
 	else if (MATCHX("DROPSTMT"))
 		return_value = _readDropStmt();
+	else if (MATCHX("DISTRIBUTIONKEYELEM"))
+		return_value = _readDistributionKeyElem();
 	else if (MATCHX("EXTTABLETYPEDESC"))
 		return_value = _readExtTableTypeDesc();
 	else if (MATCHX("FUNCCALL"))

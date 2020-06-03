@@ -63,7 +63,14 @@ log_optimizer(PlannedStmt *plan, bool fUnexpectedFailure)
 		(fUnexpectedFailure && OPTIMIZER_UNEXPECTED_FAIL == optimizer_log_failure) || 		/* unexpected fall back */
 		(!fUnexpectedFailure && OPTIMIZER_EXPECTED_FAIL == optimizer_log_failure))			/* expected fall back */
 	{
-		elog(LOG, "Pivotal Optimizer (GPORCA) failed to produce plan");
+		if (fUnexpectedFailure)
+		{
+			elog(LOG, "Pivotal Optimizer (GPORCA) failed to produce plan (unexpected)");
+		}
+		else
+		{
+			elog(LOG, "Pivotal Optimizer (GPORCA) failed to produce plan");
+		}
 		return;
 	}
 }
@@ -102,7 +109,7 @@ optimize_query(Query *parse, ParamListInfo boundParams)
 	glob->share.shared_inputs = NULL;
 	glob->share.shared_input_count = 0;
 	glob->share.motStack = NIL;
-	glob->share.qdShares = NIL;
+	glob->share.qdShares = NULL;
 	/* these will be filled in below, in the pre- and post-processing steps */
 	glob->finalrtable = NIL;
 	glob->subplans = NIL;

@@ -467,9 +467,6 @@ _outSort(StringInfo str, Sort *node)
 
     /* CDB */
     WRITE_BOOL_FIELD(noduplicates);
-
-	WRITE_ENUM_FIELD(share_type, ShareType);
-	WRITE_INT_FIELD(share_id);
 }
 
 static void
@@ -540,6 +537,7 @@ _outMotion(StringInfo str, Motion *node)
 	WRITE_BOOL_ARRAY(nullsFirst, node->numSortCols);
 
 	WRITE_INT_FIELD(segidColIdx);
+	WRITE_INT_FIELD(numHashSegments);
 
 	_outPlanInfo(str, (Plan *) node);
 }
@@ -691,6 +689,7 @@ _outCreateForeignTableStmt(StringInfo str, CreateForeignTableStmt *node)
 
 	WRITE_STRING_FIELD(servername);
 	WRITE_NODE_FIELD(options);
+	WRITE_NODE_FIELD(distributedBy);
 }
 
 static void
@@ -1636,6 +1635,9 @@ _outNode(StringInfo str, void *obj)
 			case T_CreateForeignTableStmt:
 				_outCreateForeignTableStmt(str, obj);
 				break;
+			case T_DistributionKeyElem:
+				_outDistributionKeyElem(str, obj);
+				break;
 			case T_ColumnReferenceStorageDirective:
 				_outColumnReferenceStorageDirective(str, obj);
 				break;
@@ -2152,6 +2154,9 @@ _outNode(StringInfo str, void *obj)
 				break;
 			case T_RowIdExpr:
 				_outRowIdExpr(str, obj);
+				break;
+			case T_RestrictInfo:
+				_outRestrictInfo(str, obj);
 				break;
 
 			default:

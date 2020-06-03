@@ -32,10 +32,10 @@
  * acquire_sample_rows(), when called in the dispatcher, calls into the
  * segments to acquire the sample across all segments.
  * RelationGetNumberOfBlocks() calls have been replaced with a wrapper
- * function, acquire_number_of_blocks(), which likewise calls into the
+ * function, AcquireNumberOfBlocks(), which likewise calls into the
  * segments, to get total relation size across all segments.
  *
- * acquire_number_of_blocks() calls pg_relation_size(), which already
+ * AcquireNumberOfBlocks() calls pg_relation_size(), which already
  * contains the logic to gather the size from all segments.
  *
  * Acquiring the sample rows is more tricky. When called in dispatcher,
@@ -169,7 +169,8 @@ Bitmapset	**acquire_func_colLargeRowIndexes;
 static void do_analyze_rel(Relation onerel, int options,
 			   VacuumParams *params, List *va_cols,
 			   AcquireSampleRowsFunc acquirefunc, BlockNumber relpages,
-			   bool inh, bool in_outer_xact, int elevel);
+			   bool inh, bool in_outer_xact, int elevel,
+			   gp_acquire_sample_rows_context *ctx);
 static void compute_index_stats(Relation onerel, double totalrows,
 					AnlIndexData *indexdata, int nindexes,
 					HeapTuple *rows, int numrows,
@@ -179,7 +180,6 @@ static VacAttrStats *examine_attribute(Relation onerel, int attnum,
 static int acquire_sample_rows_dispatcher(Relation onerel, bool inh, int elevel,
 										  HeapTuple *rows, int targrows,
 										  double *totalrows, double *totaldeadrows);
-static BlockNumber acquire_number_of_blocks(Relation onerel);
 static BlockNumber acquire_index_number_of_blocks(Relation indexrel, Relation tablerel);
 
 static int	compare_rows(const void *a, const void *b);
@@ -190,7 +190,8 @@ static Datum ind_fetch_func(VacAttrStatsP stats, int rownum, bool *isNull);
 
 static void analyze_rel_internal(Oid relid, RangeVar *relation, int options,
 								 VacuumParams *params, List *va_cols,
-								 bool in_outer_xact, BufferAccessStrategy bstrategy);
+								 bool in_outer_xact, BufferAccessStrategy bstrategy,
+								 gp_acquire_sample_rows_context *ctx);
 static void acquire_hll_by_query(Relation onerel, int nattrs, VacAttrStats **attrstats, int elevel);
 
 /*
@@ -199,7 +200,7 @@ static void acquire_hll_by_query(Relation onerel, int nattrs, VacAttrStats **att
 void
 analyze_rel(Oid relid, RangeVar *relation, int options,
 			VacuumParams *params, List *va_cols, bool in_outer_xact,
-			BufferAccessStrategy bstrategy)
+			BufferAccessStrategy bstrategy, gp_acquire_sample_rows_context *ctx)
 {
 	bool		optimizerBackup;
 
@@ -214,7 +215,7 @@ analyze_rel(Oid relid, RangeVar *relation, int options,
 	PG_TRY();
 	{
 		analyze_rel_internal(relid, relation, options, params, va_cols,
-				in_outer_xact, bstrategy);
+				in_outer_xact, bstrategy, ctx);
 	}
 	/* Clean up in case of error. */
 	PG_CATCH();
@@ -232,7 +233,7 @@ analyze_rel(Oid relid, RangeVar *relation, int options,
 static void
 analyze_rel_internal(Oid relid, RangeVar *relation, int options,
 			VacuumParams *params, List *va_cols, bool in_outer_xact,
-			BufferAccessStrategy bstrategy)
+			BufferAccessStrategy bstrategy, gp_acquire_sample_rows_context *ctx)
 {
 	Relation	onerel;
 	int			elevel;
@@ -335,7 +336,7 @@ analyze_rel_internal(Oid relid, RangeVar *relation, int options,
 		acquirefunc = acquire_sample_rows;
 
 		/* Also get regular table's size */
-		relpages = acquire_number_of_blocks(onerel);
+		relpages = AcquireNumberOfBlocks(onerel);
 	}
 	else if (onerel->rd_rel->relkind == RELKIND_FOREIGN_TABLE)
 	{
@@ -389,14 +390,14 @@ analyze_rel_internal(Oid relid, RangeVar *relation, int options,
 	PartStatus ps = rel_part_status(relid);
 	if (!(ps == PART_STATUS_ROOT || ps == PART_STATUS_INTERIOR))
 		do_analyze_rel(onerel, options, params, va_cols, acquirefunc, relpages,
-					   false, in_outer_xact, elevel);
+					   false, in_outer_xact, elevel, ctx);
 
 	/*
 	 * If there are child tables, do recursive ANALYZE.
 	 */
 	if (onerel->rd_rel->relhassubclass)
 		do_analyze_rel(onerel, options, params, va_cols, acquirefunc, relpages,
-					   true, in_outer_xact, elevel);
+					   true, in_outer_xact, elevel, ctx);
 
 	/* MPP-6929: metadata tracking */
 	if (!vacuumStatement_IsTemporary(onerel) && (Gp_role == GP_ROLE_DISPATCH))
@@ -442,7 +443,7 @@ static void
 do_analyze_rel(Relation onerel, int options, VacuumParams *params,
 			   List *va_cols, AcquireSampleRowsFunc acquirefunc,
 			   BlockNumber relpages, bool inh, bool in_outer_xact,
-			   int elevel)
+			   int elevel, gp_acquire_sample_rows_context *ctx)
 {
 	int			attr_cnt,
 				tcnt,
@@ -659,6 +660,8 @@ do_analyze_rel(Relation onerel, int options, VacuumParams *params,
 	sample_needed = needs_sample(vacattrstats, attr_cnt);
 	if (sample_needed)
 	{
+		if (ctx)
+			MemoryContextSwitchTo(caller_context);
 		rows = (HeapTuple *) palloc(targrows * sizeof(HeapTuple));
 
 		/*
@@ -677,6 +680,8 @@ do_analyze_rel(Relation onerel, int options, VacuumParams *params,
 									  rows, targrows,
 									  &totalrows, &totaldeadrows);
 		acquire_func_colLargeRowIndexes = NULL;
+		if (ctx)
+			MemoryContextSwitchTo(anl_context);
 	}
 	else
 	{
@@ -685,6 +690,14 @@ do_analyze_rel(Relation onerel, int options, VacuumParams *params,
 		totaldeadrows = 0;
 		numrows = 0;
 		rows = NULL;
+	}
+
+	if (ctx)
+	{
+		ctx->sample_rows = rows;
+		ctx->num_sample_rows = numrows;
+		ctx->totalrows = totalrows;
+		ctx->totaldeadrows = totaldeadrows;
 	}
 
 	/*
@@ -1870,7 +1883,7 @@ acquire_inherited_sample_rows(Relation onerel, int elevel,
 		{
 			/* Regular table, so use the regular row acquisition function */
 			acquirefunc = acquire_sample_rows;
-			relpages = acquire_number_of_blocks(childrel);
+			relpages = AcquireNumberOfBlocks(childrel);
 		}
 		else if (childrel->rd_rel->relkind == RELKIND_FOREIGN_TABLE)
 		{
@@ -2100,8 +2113,8 @@ acquire_hll_by_query(Relation onerel, int nattrs, VacAttrStats **attrstats, int 
  * GPDB, we need to deal with AO and AOCS tables, and if we're in the
  * dispatcher, need to get the size from the segments.
  */
-static BlockNumber
-acquire_number_of_blocks(Relation onerel)
+BlockNumber
+AcquireNumberOfBlocks(Relation onerel)
 {
 	int64		totalbytes;
 
@@ -2150,7 +2163,7 @@ acquire_number_of_blocks(Relation onerel)
 /*
  * Compute index relation's size.
  *
- * Like acquire_number_of_blocks(), but for indexes. Indexes don't
+ * Like AcquireNumberOfBlocks(), but for indexes. Indexes don't
  * have a distribution policy, so we use the parent table's policy
  * to determine whether we need to get the size on segments or
  * locally.

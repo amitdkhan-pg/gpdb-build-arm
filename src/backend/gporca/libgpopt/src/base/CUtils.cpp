@@ -25,7 +25,6 @@
 #include "gpopt/base/CPartIndexMap.h"
 #include "gpopt/base/CDistributionSpecRandom.h"
 #include "gpopt/operators/CPhysicalMotionRandom.h"
-#include "gpopt/operators/ops.h"
 #include "gpopt/operators/CLogicalCTEProducer.h"
 #include "gpopt/operators/CLogicalCTEConsumer.h"
 #include "gpopt/translate/CTranslatorExprToDXLUtils.h"
@@ -36,6 +35,7 @@
 #include "gpopt/operators/CExpressionPreprocessor.h"
 
 #include "naucrates/exception.h"
+#include "naucrates/base/IDatumBool.h"
 #include "naucrates/base/IDatumInt2.h"
 #include "naucrates/base/IDatumInt4.h"
 #include "naucrates/base/IDatumInt8.h"
@@ -129,6 +129,8 @@ CUtils::PrintMemo
 	str.Reset();
 }
 
+#endif // GPOS_DEBUG
+
 // helper function to print a column descriptor array
 IOstream &
 CUtils::OsPrintDrgPcoldesc
@@ -151,7 +153,6 @@ CUtils::OsPrintDrgPcoldesc
 	return os;
 }
 
-#endif // GPOS_DEBUG
 
 // generate a ScalarIdent expression
 CExpression *

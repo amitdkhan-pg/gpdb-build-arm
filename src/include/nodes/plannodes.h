@@ -775,6 +775,7 @@ typedef struct FunctionScan
 	bool		funcordinality; /* WITH ORDINALITY */
 	Param      *param;			/* used when funtionscan run as initplan */
 	bool		resultInTupleStore; /* function result stored in tuplestore */
+	int			initplanId;			/* initplan id for function execute on initplan */
 } FunctionScan;
 
 /* ----------------
@@ -839,7 +840,6 @@ typedef struct ExternalScanInfo
 {
 	NodeTag		type;
 	List		*uriList;       /* data uri or null for each segment  */
-	char	   *fmtOptString;	/* data format options                */
 	char		fmtType;        /* data format type                   */
 	bool		isMasterOnly;   /* true for EXECUTE on master seg only */
 	int			rejLimit;       /* reject limit (-1 for no sreh)      */
@@ -1023,23 +1023,8 @@ typedef struct HashJoin
 	List	   *hashqualclauses;
 } HashJoin;
 
-/*
- * Share type of sharing a node.
- */
-typedef enum ShareType
-{
-	SHARE_NOTSHARED,
-	SHARE_MATERIAL,          	/* Sharing a material node */
-	SHARE_MATERIAL_XSLICE,		/* Sharing a material node, across slice */
-	SHARE_SORT,					/* Sharing a sort */
-	SHARE_SORT_XSLICE			/* Sharing a sort, across slice */
-	/* Other types maybe added later, like sharing a hash */
-} ShareType;
-
 #define SHARE_ID_NOT_SHARED (-1)
 #define SHARE_ID_NOT_ASSIGNED (-2)
-
-extern ShareType get_plan_share_type (Plan *p);
 
 /* ----------------
  *		shareinputscan node
@@ -1049,7 +1034,7 @@ typedef struct ShareInputScan
 {
 	Scan 		scan;
 
-	ShareType 	share_type;
+	bool		cross_slice;
 	int 		share_id;
 
 	/*
@@ -1084,10 +1069,6 @@ typedef struct Material
 	Plan		plan;
 	bool		cdb_strict;
 	bool		cdb_shield_child_from_rescans;
-
-	/* Material can be shared */
-	ShareType 	share_type;
-	int 		share_id;
 } Material;
 
 /* ----------------
@@ -1104,10 +1085,6 @@ typedef struct Sort
 	bool	   *nullsFirst;		/* NULLS FIRST/LAST directions */
     /* CDB */
 	bool		noduplicates;   /* TRUE if sort should discard duplicates */
-
-	/* Sort node can be shared */
-	ShareType 	share_type;
-	int 		share_id;
 } Sort;
 
 /* ---------------
@@ -1345,6 +1322,7 @@ typedef struct Motion
 	/* For Hash */
 	List		*hashExprs;			/* list of hash expressions */
 	Oid			*hashFuncs;			/* corresponding hash functions */
+	int         numHashSegments;	/* the module number of the hash function */
 
 	/* For Explicit */
 	AttrNumber segidColIdx;			/* index of the segid column in the target list */

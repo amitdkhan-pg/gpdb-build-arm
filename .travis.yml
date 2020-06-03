@@ -22,6 +22,7 @@ addons:
             - gcc-8
             - libxml2
             - libxml2-dev
+            - libxerces-c-dev
             - libevent-dev
             - libperl-dev
             - g++-8
@@ -75,6 +76,7 @@ matrix:
             homebrew:
               packages:
                 - ccache
+                - xerces-c
         #
         # Configuration variations
         # ----------------------------------------------------------------
@@ -128,6 +130,14 @@ python:
 before_install:
     - eval "${OVERRIDE_CC}"
     - eval "${OVERRIDE_CXX}"
+    # ccache 3.2 (from Ubuntu Xenial) has CCACHE_CPP2 default to off (this
+    # setting defaults to on starting from ccache 3.3). That default leads to
+    # unlegible compiler warning outputs because GCC and Clang will emit
+    # warnings using the preprocessed output...
+    - |
+      if [ "${TRAVIS_DIST}" = xenial ]; then
+        ccache --set-config run_second_cpp=true
+      fi
     - |
       if [ "${TRAVIS_COMPILER}" = clang ]; then
         case "${TRAVIS_OS_NAME}" in
@@ -176,7 +186,7 @@ script:
             --enable-debug-extensions \
             --with-perl \
             --with-python \
-            --disable-orca \
+            --enable-orca \
             --with-openssl \
             --with-ldap \
             --with-libcurl \
@@ -202,7 +212,7 @@ script:
             --prefix=${TRAVIS_BUILD_DIR}/gpsql \
             --with-perl \
             --with-python \
-            --disable-orca \
+            --enable-orca \
             --with-openssl \
             --with-ldap \
             --with-libcurl \
@@ -230,6 +240,8 @@ script:
             --disable-pxf \
             --disable-gpcloud \
             --without-zstd \
+            --with-includes=$(brew --prefix xerces-c)/include \
+            --with-libs=$(brew --prefix xerces-c)/lib \
             $C
         make -s install
         source ${TRAVIS_BUILD_DIR}/gpsql/greenplum_path.sh

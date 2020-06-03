@@ -455,8 +455,8 @@ isGPDB6000OrLater(Archive *fout)
 	if (!isGPDB(fout))
 		return false;		/* Not Greenplum at all. */
 
-	/* GPDB 6 is based on PostgreSQL 8.4 */
-	return fout->remoteVersion >= 80400;
+	/* GPDB 6 is based on PostgreSQL 9.4 */
+	return fout->remoteVersion >= 90400;
 }
 
 int
@@ -6157,7 +6157,7 @@ getTables(Archive *fout, int *numTables)
 				   "WHERE c.relkind in ('%c', '%c', '%c', '%c', '%c', '%c') "
 						  "AND c.relnamespace <> 7012 " /* BM_BITMAPINDEX_NAMESPACE */
 						  "AND c.oid NOT IN (SELECT p.parchildrelid FROM pg_partition_rule p LEFT "
-						  "JOIN pg_exttable e ON p.parchildrelid=e.reloid WHERE e.reloid IS NULL)"
+						  "JOIN pg_foreign_table e ON p.parchildrelid=e.ftrelid WHERE e.ftrelid IS NULL)"
 						  "ORDER BY c.oid",
 						  acl_subquery->data,
 						  racl_subquery->data,
@@ -16243,15 +16243,6 @@ dumpTableSchema(Archive *fout, TableInfo *tbinfo)
 					ftoptions = pg_strdup(PQgetvalue(res, 0, i_ftoptions));
 					PQclear(res);
 					destroyPQExpBuffer(query);
-
-					/* START MPP ADDITION */
-					if (strcmp(srvname, PG_EXTTABLE_SERVER_NAME) == 0)
-					{
-						reltypename = "EXTERNAL TABLE";
-						break;
-					}
-					/* END MPP ADDITION */
-
 					break;
 				}
 			case (RELKIND_MATVIEW):
@@ -16430,11 +16421,6 @@ dumpTableSchema(Archive *fout, TableInfo *tbinfo)
 
 					if (has_notnull)
 						appendPQExpBufferStr(q, " NOT NULL");
-
-					/* Column Storage attributes */
-					if (tbinfo->attencoding[j] != NULL)
-						appendPQExpBuffer(q, " ENCODING (%s)",
-										  tbinfo->attencoding[j]);
 				}
 			}
 
@@ -16458,6 +16444,33 @@ dumpTableSchema(Archive *fout, TableInfo *tbinfo)
 				appendPQExpBufferStr(q, constr->condef);
 
 				actual_atts++;
+			}
+
+			/*
+			 * Add AOCO ENCODING directives, if any.
+			 *
+			 * We dump these as separate "COLUMN <col> ENCODING ..." clauses,
+			 * instead of tacking the ENCODING at the column definition, so
+			 * that this works for inherited columns, too. Inherited columns
+			 * are not listed in the column list.
+			 */
+			for (j = 0; j < tbinfo->numatts; j++)
+			{
+				if (tbinfo->attisdropped[j])
+					continue;
+
+				if (tbinfo->attencoding[j] != NULL)
+				{
+					if (actual_atts == 0)
+						appendPQExpBufferStr(q, " (\n    ");
+					else
+						appendPQExpBufferStr(q, ",\n    ");
+
+					appendPQExpBuffer(q, "COLUMN %s ENCODING (%s)",
+									  fmtId(tbinfo->attnames[j]),
+									  tbinfo->attencoding[j]);
+					actual_atts++;
+				}
 			}
 
 			if (actual_atts)
@@ -16655,6 +16668,9 @@ dumpTableSchema(Archive *fout, TableInfo *tbinfo)
 		/* Dump generic options if any */
 		if (ftoptions && ftoptions[0])
 			appendPQExpBuffer(q, "\nOPTIONS (\n    %s\n)", ftoptions);
+
+		if (dumpGpPolicy && tbinfo->relkind == RELKIND_FOREIGN_TABLE && strcmp(srvname, PG_EXTTABLE_SERVER_NAME) == 0)
+			addDistributedBy(fout, q, tbinfo, actual_atts);
 
 		appendPQExpBufferStr(q, ";\n");
 
