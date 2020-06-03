@@ -186,7 +186,7 @@ script:
             --enable-debug-extensions \
             --with-perl \
             --with-python \
-            --enable-orca \
+            --disable-orca \
             --with-openssl \
             --with-ldap \
             --with-libcurl \
@@ -212,7 +212,7 @@ script:
             --prefix=${TRAVIS_BUILD_DIR}/gpsql \
             --with-perl \
             --with-python \
-            --enable-orca \
+            --disable-orca \
             --with-openssl \
             --with-ldap \
             --with-libcurl \
