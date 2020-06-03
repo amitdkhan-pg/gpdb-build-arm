@@ -186,7 +186,6 @@ script:
             --enable-debug-extensions \
             --with-perl \
             --with-python \
-            --enable-orca \
             --with-openssl \
             --with-ldap \
             --with-libcurl \
