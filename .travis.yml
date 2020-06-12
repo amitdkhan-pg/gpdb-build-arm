@@ -93,12 +93,13 @@ matrix:
                   sources: *common_sources
                   packages: *common_packages
         # ARM64, Ubuntu Bionic, gcc 8, unit tests
+        # For arm64, disable orca to avoid job timeouts
         - os: linux
           arch: arm64
           dist: bionic
           compiler: gcc
           env:
-              - tests=unit T=debug C=""
+              - tests=unit T=debug C="--disable-orca"
               - OVERRIDE_CC="CC=gcc-8" OVERRIDE_CXX="CXX=g++-8"
           addons:
               apt:
@@ -110,7 +111,7 @@ matrix:
           dist: bionic
           compiler: gcc
           env:
-              - tests=installcheck T=debug C=""
+              - tests=installcheck T=debug C="--disable-orca"
               - OVERRIDE_CC="CC=gcc-8" OVERRIDE_CXX="CXX=g++-8"
           addons:
               apt:
@@ -186,7 +187,7 @@ script:
             --enable-debug-extensions \
             --with-perl \
             --with-python \
-            --disable-orca \
+            --enable-orca \
             --with-openssl \
             --with-ldap \
             --with-libcurl \
@@ -212,7 +213,7 @@ script:
             --prefix=${TRAVIS_BUILD_DIR}/gpsql \
             --with-perl \
             --with-python \
-            --disable-orca \
+            --enable-orca \
             --with-openssl \
             --with-ldap \
             --with-libcurl \
