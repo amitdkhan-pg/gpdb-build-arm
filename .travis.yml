@@ -35,6 +35,9 @@ addons:
             - ssh
 
 matrix:
+    allow_failures:
+        - arch: arm64
+    fast_finish: true
     include:
         # OS and Compiler variations
         # ----------------------------------------------------------------
@@ -99,7 +102,7 @@ matrix:
           dist: bionic
           compiler: gcc
           env:
-              - tests=unit T=debug C="--disable-orca"
+              - T=debug
               - OVERRIDE_CC="CC=gcc-8" OVERRIDE_CXX="CXX=g++-8"
           addons:
               apt:
@@ -111,7 +114,7 @@ matrix:
           dist: bionic
           compiler: gcc
           env:
-              - tests=installcheck T=debug C="--disable-orca"
+              - T=debug C="--disable-orca --invalid-opt"
               - OVERRIDE_CC="CC=gcc-8" OVERRIDE_CXX="CXX=g++-8"
           addons:
               apt:
