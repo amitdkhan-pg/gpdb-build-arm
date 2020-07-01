@@ -10,7 +10,7 @@ branches:
   - travis
 
 git:
-  submodules: false
+  submodules: true
 
 addons:
     apt:
@@ -35,9 +35,6 @@ addons:
             - ssh
 
 matrix:
-    allow_failures:
-        - arch: arm64
-    fast_finish: true
     include:
         # OS and Compiler variations
         # ----------------------------------------------------------------
@@ -102,7 +99,7 @@ matrix:
           dist: bionic
           compiler: gcc
           env:
-              - T=debug
+              - tests=unit T=debug
               - OVERRIDE_CC="CC=gcc-8" OVERRIDE_CXX="CXX=g++-8"
           addons:
               apt:
@@ -114,7 +111,7 @@ matrix:
           dist: bionic
           compiler: gcc
           env:
-              - T=debug C="--disable-orca --invalid-opt"
+              - tests=installcheck T=debug
               - OVERRIDE_CC="CC=gcc-8" OVERRIDE_CXX="CXX=g++-8"
           addons:
               apt:
@@ -166,8 +163,6 @@ before_install:
 
 install:
     - python -m pip install --user --upgrade pip
-    - python -m pip install --user --pre psutil
-    - python -m pip install --user lockfile
     - python -m pip install --user setuptools
 
 ## ----------------------------------------------------------------------
@@ -198,7 +193,7 @@ script:
             --enable-mapreduce \
             --enable-orafce \
             $C
-        make -j 5 install
+        travis_wait 50 make -s install
         source ${TRAVIS_BUILD_DIR}/gpsql/greenplum_path.sh
         if [ -z "$tests" ] || [ "$tests" = "unit" ]; then
             make -s unittest-check
