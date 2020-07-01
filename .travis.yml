@@ -193,7 +193,7 @@ script:
             --enable-mapreduce \
             --enable-orafce \
             $C
-        travis_wait 50 make -s install
+        travis_wait 50 make -j 4 install
         source ${TRAVIS_BUILD_DIR}/gpsql/greenplum_path.sh
         if [ -z "$tests" ] || [ "$tests" = "unit" ]; then
             make -s unittest-check
