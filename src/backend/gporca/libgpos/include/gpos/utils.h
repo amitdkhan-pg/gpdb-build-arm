@@ -20,7 +20,7 @@
 #include "gpos/error/CException.h"
 #include "gpos/io/COstreamBasic.h"
 
-#define GPOS_ASMFP asm volatile ("movq %%rbp, %0" : "=g" (ulp));
+#define GPOS_ASMFP do { ulp = (ULONG_PTR) __builtin_frame_address (0); } while (0)
 #define GPOS_ASMSP asm volatile ("movq %%rsp, %0" : "=g" (ulp));
 
 #define ALIGNED_16(x) (((ULONG_PTR) x >> 1) << 1 == (ULONG_PTR) x)	// checks 16-bit alignment
