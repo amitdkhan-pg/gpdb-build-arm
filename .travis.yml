@@ -201,7 +201,7 @@ script:
         if [ -z "$tests" ] || [ "$tests" = "installcheck" ]; then
             make -C gpAux/gpdemo cluster
             source gpAux/gpdemo/gpdemo-env.sh
-            make -C src/test/regress installcheck-small
+            make -C src/test/regress custom
         fi
       fi
   - |
