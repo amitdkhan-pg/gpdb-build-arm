@@ -19,13 +19,13 @@ addons:
         sources: &common_sources
             - ubuntu-toolchain-r-test
         packages: &common_packages
-            - gcc-8
+            - gcc-7
             - libxml2
             - libxml2-dev
             - libxerces-c-dev
             - libevent-dev
             - libperl-dev
-            - g++-8
+            - g++-7
             - python-dev
             - python-yaml
             - libapr1-dev
@@ -45,7 +45,7 @@ matrix:
           compiler: gcc
           env:
               - T=debug C=""
-              - OVERRIDE_CC="CC=gcc-8" OVERRIDE_CXX="CXX=g++-8"
+              - OVERRIDE_CC="CC=gcc-7" OVERRIDE_CXX="CXX=g++-7"
           addons:
               apt:
                   sources:
@@ -87,7 +87,7 @@ matrix:
           compiler: gcc
           env:
               - T=debug C="--without-zlib --without-libbz2 --without-zstd --without-quicklz"
-              - OVERRIDE_CC="CC=gcc-8" OVERRIDE_CXX="CXX=g++-8"
+              - OVERRIDE_CC="CC=gcc-7" OVERRIDE_CXX="CXX=g++-7"
           addons:
               apt:
                   sources: *common_sources
@@ -100,7 +100,7 @@ matrix:
           compiler: gcc
           env:
               - tests=unit T=debug
-              - OVERRIDE_CC="CC=gcc-8" OVERRIDE_CXX="CXX=g++-8"
+              - OVERRIDE_CC="CC=gcc-7" OVERRIDE_CXX="CXX=g++-7"
           addons:
               apt:
                   sources: *common_sources
@@ -112,7 +112,7 @@ matrix:
           compiler: gcc
           env:
               - tests=installcheck T=debug
-              - OVERRIDE_CC="CC=gcc-8" OVERRIDE_CXX="CXX=g++-8"
+              - OVERRIDE_CC="CC=gcc-7" OVERRIDE_CXX="CXX=g++-7"
           addons:
               apt:
                   sources: *common_sources
