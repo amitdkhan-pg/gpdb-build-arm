@@ -7,7 +7,7 @@ cache: ccache
 
 branches:
   only:
-  - travis
+  - travis_arm_trial
 
 git:
   submodules: true
