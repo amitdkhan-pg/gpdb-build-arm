@@ -199,8 +199,8 @@ script:
             --enable-orafce \
             --enable-ic-proxy \
             $C
-        travis_wait 50 make -s
-        make -s install
+        make
+        make install
         source ${TRAVIS_BUILD_DIR}/gpsql/greenplum_path.sh
         if [ -z "$tests" ] || [ "$tests" = "unit" ]; then
             make -s unittest-check
@@ -227,8 +227,8 @@ script:
             --enable-orafce \
             --enable-ic-proxy \
             $C
-        travis_wait 50 make -s
-        make -s install
+        make
+        make install
         source ${TRAVIS_BUILD_DIR}/gpsql/greenplum_path.sh
         make -s unittest-check
         make -C gpAux/gpdemo cluster
@@ -252,7 +252,7 @@ script:
             --with-libs=$(brew --prefix xerces-c)/lib \
             CFLAGS='-O0' CXXFLAGS='-O0' \
             $C
-        travis_wait 40 make -s
+        make
         make -s install
         source ${TRAVIS_BUILD_DIR}/gpsql/greenplum_path.sh
         make -s unittest-check
