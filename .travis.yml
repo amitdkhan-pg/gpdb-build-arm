@@ -5,6 +5,10 @@
 language: cpp
 cache: ccache
 
+branches:
+  only:
+  - travis
+
 git:
   submodules: true
 
